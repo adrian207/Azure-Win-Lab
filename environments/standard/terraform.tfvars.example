@@ -1,0 +1,31 @@
+# Standard Environment Configuration
+# This is your standard lab configuration with 3 Windows Servers, 1 Windows 11 workstation, and SQL Server
+
+environment_name = "standard"
+location         = "East US"
+
+vnet_address_space = ["10.0.0.0/16"]
+
+# VM Credentials
+admin_username = "labadmin"
+admin_password = "CHANGE_ME"
+
+sql_admin_username = "sqladmin"
+sql_admin_password = "CHANGE_ME"
+
+# Standard VM sizes
+server_vm_size     = "Standard_D2s_v3"
+workstation_vm_size = "Standard_D2s_v3"
+sql_vm_size        = "Standard_D4s_v3"
+
+enable_auto_shutdown   = true
+auto_shutdown_time     = "1900"
+auto_shutdown_timezone = "Eastern Standard Time"
+
+tags = {
+  Environment  = "Standard"
+  Project      = "Windows Server Lab"
+  Purpose      = "Standard Testing Configuration"
+  AutoShutdown = "Enabled"
+}
+

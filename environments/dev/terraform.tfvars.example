@@ -1,0 +1,31 @@
+# Development Environment Configuration
+# Smaller configuration for development and quick testing
+
+environment_name = "dev"
+location         = "East US"
+
+vnet_address_space = ["10.1.0.0/16"]
+
+# VM Credentials
+admin_username = "labadmin"
+admin_password = "CHANGE_ME"
+
+sql_admin_username = "sqladmin"
+sql_admin_password = "CHANGE_ME"
+
+# Smaller VM sizes for dev
+server_vm_size     = "Standard_B2s"   # Cost-effective burstable VMs
+workstation_vm_size = "Standard_B2s"
+sql_vm_size        = "Standard_D2s_v3"
+
+enable_auto_shutdown   = true
+auto_shutdown_time     = "1800"  # Shutdown earlier for dev
+auto_shutdown_timezone = "Eastern Standard Time"
+
+tags = {
+  Environment  = "Development"
+  Project      = "Windows Server Lab"
+  Purpose      = "Development and Quick Testing"
+  AutoShutdown = "Enabled"
+}
+

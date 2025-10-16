@@ -1,0 +1,37 @@
+# Azure Windows Server Lab - Example Configuration
+# Copy this file to terraform.tfvars and fill in your values
+
+# Environment Configuration
+environment_name = "standard"
+location         = "East US"
+
+# Network Configuration
+vnet_address_space = ["10.0.0.0/16"]
+
+# VM Credentials (CHANGE THESE!)
+admin_username = "labadmin"
+admin_password = "YourSecurePassword123!"  # Must meet Azure password requirements
+
+# SQL Server Credentials
+sql_admin_username = "sqladmin"
+sql_admin_password = "YourSQLPassword123!"  # Must meet SQL Server password requirements
+
+# VM Sizes (adjust based on your needs and budget)
+server_vm_size     = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
+workstation_vm_size = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
+sql_vm_size        = "Standard_D4s_v3"  # 4 vCPUs, 16 GB RAM
+
+# Auto-Shutdown Configuration (to save costs)
+enable_auto_shutdown   = true
+auto_shutdown_time     = "1900"  # 7:00 PM (24-hour format)
+auto_shutdown_timezone = "Eastern Standard Time"
+
+# Resource Tags
+tags = {
+  Project      = "Windows Server Lab"
+  Purpose      = "Testing and Demos"
+  Owner        = "Your Name"
+  CostCenter   = "IT"
+  AutoShutdown = "Enabled"
+}
+
