@@ -38,6 +38,13 @@ resource "azurerm_subnet" "database" {
   address_prefixes     = ["10.0.4.0/24"]
 }
 
+resource "azurerm_subnet" "linux" {
+  name                 = "${var.environment_name}-linux-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.lab_vnet.name
+  address_prefixes     = ["10.0.5.0/24"]
+}
+
 # Network Security Group for Servers
 resource "azurerm_network_security_group" "servers" {
   name                = "${var.environment_name}-servers-nsg"
@@ -152,6 +159,53 @@ resource "azurerm_network_security_group" "database" {
   }
 }
 
+# Network Security Group for Linux
+resource "azurerm_network_security_group" "linux" {
+  name                = "${var.environment_name}-linux-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+
+  # Allow SSH
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 1000
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "*"
+  }
+
+  # Allow HTTP (for web servers if needed)
+  security_rule {
+    name                       = "AllowHTTP"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "*"
+  }
+
+  # Allow HTTPS (for web servers if needed)
+  security_rule {
+    name                       = "AllowHTTPS"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "*"
+  }
+}
+
 # Associate NSGs with Subnets
 resource "azurerm_subnet_network_security_group_association" "servers" {
   subnet_id                 = azurerm_subnet.servers.id
@@ -168,3 +222,7 @@ resource "azurerm_subnet_network_security_group_association" "database" {
   network_security_group_id = azurerm_network_security_group.database.id
 }
 
+resource "azurerm_subnet_network_security_group_association" "linux" {
+  subnet_id                 = azurerm_subnet.linux.id
+  network_security_group_id = azurerm_network_security_group.linux.id
+}

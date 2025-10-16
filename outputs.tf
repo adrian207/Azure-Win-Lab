@@ -50,17 +50,33 @@ output "sql_server_private_ip" {
   value       = module.sql_server.private_ip_address
 }
 
+output "linux_server_names" {
+  description = "Names of the Red Hat Linux VMs"
+  value       = [for server in module.redhat_linux : server.vm_name]
+}
+
+output "linux_server_private_ips" {
+  description = "Private IP addresses of Linux Servers"
+  value       = [for server in module.redhat_linux : server.private_ip_address]
+}
+
+output "linux_admin_username" {
+  description = "Admin username for Linux hosts"
+  value       = var.linux_admin_username
+}
+
 output "connection_instructions" {
   description = "Instructions for connecting to the lab environment"
   value = <<-EOT
     ================================
-    Azure Windows Server Lab - Connection Info
+    Azure Hybrid Server Lab - Connection Info
     ================================
     
     Resource Group: ${azurerm_resource_group.lab.name}
     Location: ${azurerm_resource_group.lab.location}
     
-    To connect to your VMs:
+    WINDOWS SYSTEMS (RDP via Bastion):
+    -----------------------------------
     1. Go to Azure Portal
     2. Navigate to the VM you want to access
     3. Click "Connect" > "Bastion"
@@ -77,6 +93,21 @@ output "connection_instructions" {
     SQL Server:
       - ${module.sql_server.vm_name}: ${module.sql_server.private_ip_address}
       - SQL Admin: ${var.sql_admin_username}
+    
+    LINUX SYSTEMS (SSH via Bastion):
+    -----------------------------------
+    Red Hat Enterprise Linux Servers:
+    ${join("\n", [for idx, server in module.redhat_linux : "  - ${server.vm_name}: ${server.private_ip_address}"])}
+    
+    Linux Admin Username: ${var.linux_admin_username}
+    ${var.ssh_public_key != "" ? "Authentication: SSH Key" : "Authentication: Password"}
+    
+    To SSH via Bastion (from local machine):
+      az network bastion ssh --name ${module.bastion.bastion_name} \
+        --resource-group ${azurerm_resource_group.lab.name} \
+        --target-resource-id <VM_RESOURCE_ID> \
+        --auth-type ${var.ssh_public_key != "" ? "ssh-key" : "password"} \
+        --username ${var.linux_admin_username}
     
     ================================
   EOT

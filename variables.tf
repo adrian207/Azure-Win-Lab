@@ -78,13 +78,30 @@ variable "auto_shutdown_timezone" {
   default     = "Eastern Standard Time"
 }
 
+variable "linux_admin_username" {
+  description = "Admin username for Linux VMs"
+  type        = string
+  default     = "azureuser"
+}
+
+variable "ssh_public_key" {
+  description = "SSH public key for Linux VMs (leave empty to use password auth)"
+  type        = string
+  default     = ""
+}
+
+variable "linux_vm_size" {
+  description = "VM size for Linux hosts"
+  type        = string
+  default     = "Standard_D2s_v3"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
   default = {
-    Project     = "Windows Server Lab"
-    Purpose     = "Testing and Demos"
+    Project      = "Hybrid Server Lab"
+    Purpose      = "Testing and Demos"
     AutoShutdown = "Enabled"
   }
 }
-

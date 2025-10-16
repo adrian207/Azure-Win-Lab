@@ -115,3 +115,19 @@ module "sql_server" {
   tags                = azurerm_resource_group.lab.tags
 }
 
+# Red Hat Enterprise Linux VMs (2 instances)
+module "redhat_linux" {
+  source = "./modules/redhat-linux"
+
+  count               = 2
+  resource_group_name = azurerm_resource_group.lab.name
+  location            = azurerm_resource_group.lab.location
+  environment_name    = var.environment_name
+  linux_name          = "rhel${count.index + 1}"
+  subnet_id           = module.networking.linux_subnet_id
+  admin_username      = var.linux_admin_username
+  admin_password      = var.admin_password
+  ssh_public_key      = var.ssh_public_key
+  vm_size             = var.linux_vm_size
+  tags                = azurerm_resource_group.lab.tags
+}

@@ -14,9 +14,14 @@ sql_admin_username = "sqladmin"
 sql_admin_password = "CHANGE_ME"
 
 # Standard VM sizes
-server_vm_size     = "Standard_D2s_v3"
+server_vm_size      = "Standard_D2s_v3"
 workstation_vm_size = "Standard_D2s_v3"
-sql_vm_size        = "Standard_D4s_v3"
+sql_vm_size         = "Standard_D4s_v3"
+linux_vm_size       = "Standard_D2s_v3"
+
+# Linux Configuration
+linux_admin_username = "azureuser"
+ssh_public_key       = ""  # Add your SSH public key or leave empty for password auth
 
 enable_auto_shutdown   = true
 auto_shutdown_time     = "1900"

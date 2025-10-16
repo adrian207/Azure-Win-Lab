@@ -17,9 +17,14 @@ sql_admin_username = "sqladmin"
 sql_admin_password = "YourSQLPassword123!"  # Must meet SQL Server password requirements
 
 # VM Sizes (adjust based on your needs and budget)
-server_vm_size     = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
+server_vm_size      = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
 workstation_vm_size = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
-sql_vm_size        = "Standard_D4s_v3"  # 4 vCPUs, 16 GB RAM
+sql_vm_size         = "Standard_D4s_v3"  # 4 vCPUs, 16 GB RAM
+linux_vm_size       = "Standard_D2s_v3"  # 2 vCPUs, 8 GB RAM
+
+# Linux Configuration
+linux_admin_username = "azureuser"
+ssh_public_key       = ""  # Leave empty to use password auth, or paste your SSH public key
 
 # Auto-Shutdown Configuration (to save costs)
 enable_auto_shutdown   = true
@@ -28,7 +33,7 @@ auto_shutdown_timezone = "Eastern Standard Time"
 
 # Resource Tags
 tags = {
-  Project      = "Windows Server Lab"
+  Project      = "Hybrid Server Lab"
   Purpose      = "Testing and Demos"
   Owner        = "Your Name"
   CostCenter   = "IT"

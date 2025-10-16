@@ -1,8 +1,8 @@
-# Azure Windows Server Lab
+# Azure Hybrid Server Lab
 
-**Automated Infrastructure as Code for Windows Server Testing and Demos**
+**Automated Infrastructure as Code for Windows & Linux Server Testing and Demos**
 
-This repository provides a complete, automated Azure lab environment for Windows Server testing, experimentation, and demonstrations. Deploy a full Windows Server infrastructure with a single command.
+This repository provides a complete, automated Azure lab environment for hybrid Windows and Linux server testing, experimentation, and demonstrations. Deploy a full multi-OS infrastructure with a single command.
 
 ## 🚀 What This Deploys
 
@@ -11,8 +11,9 @@ Your **Standard Configuration** includes:
 - **3x Windows Server 2025 Datacenter** - For domain controllers, application servers, or clustering
 - **1x Windows 11 Enterprise Workstation** - Client machine for testing and management
 - **1x SQL Server 2022 Developer Edition** - Latest SQL Server with optimized storage configuration
-- **1x Azure Bastion Host** - Secure RDP access without public IPs
-- **Complete Network Infrastructure** - VNet, subnets, NSGs with proper segmentation
+- **2x Red Hat Enterprise Linux 9.4** - Latest RHEL for Linux workloads and integration testing
+- **1x Azure Bastion Host** - Secure RDP/SSH access without public IPs
+- **Complete Network Infrastructure** - VNet, subnets, NSGs with proper segmentation for Windows and Linux
 
 ## 📋 Prerequisites
 
@@ -92,28 +93,35 @@ After deployment (15-20 minutes), use Azure Bastion to connect:
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Azure Virtual Network                    │
-│                        (10.0.0.0/16)                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────┐  ┌──────────────────────────────┐   │
-│  │ Azure Bastion    │  │  Servers Subnet (10.0.2.0/24)│   │
-│  │ (10.0.1.0/26)    │  │  ┌────────┐ ┌────────┐       │   │
-│  └──────────────────┘  │  │  DC1   │ │  DC2   │       │   │
-│                         │  └────────┘ └────────┘       │   │
-│  ┌──────────────────┐  │  ┌────────┐                  │   │
-│  │ Workstations     │  │  │  DC3   │                  │   │
-│  │ (10.0.3.0/24)    │  │  └────────┘                  │   │
-│  │ ┌──────────┐     │  └──────────────────────────────┘   │
-│  │ │   WS01   │     │                                      │
-│  │ └──────────┘     │  ┌──────────────────────────────┐   │
-│  └──────────────────┘  │ Database Subnet (10.0.4.0/24)│   │
-│                         │  ┌────────┐                  │   │
-│                         │  │  SQL01 │                  │   │
-│                         │  └────────┘                  │   │
-│                         └──────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                     Azure Virtual Network                       │
+│                        (10.0.0.0/16)                           │
+├────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────────┐  ┌──────────────────────────────┐       │
+│  │ Azure Bastion    │  │  Servers Subnet (10.0.2.0/24)│       │
+│  │ (10.0.1.0/26)    │  │  ┌────────┐ ┌────────┐       │       │
+│  │ RDP/SSH Access   │  │  │  DC1   │ │  DC2   │       │       │
+│  └──────────────────┘  │  └────────┘ └────────┘       │       │
+│                         │  ┌────────┐                  │       │
+│  ┌──────────────────┐  │  │  DC3   │                  │       │
+│  │ Workstations     │  │  └────────┘                  │       │
+│  │ (10.0.3.0/24)    │  └──────────────────────────────┘       │
+│  │ ┌──────────┐     │                                          │
+│  │ │   WS01   │     │  ┌──────────────────────────────┐       │
+│  │ └──────────┘     │  │ Database Subnet (10.0.4.0/24)│       │
+│  └──────────────────┘  │  ┌────────┐                  │       │
+│                         │  │  SQL01 │                  │       │
+│                         │  └────────┘                  │       │
+│                         └──────────────────────────────┘       │
+│                                                                 │
+│                         ┌──────────────────────────────┐       │
+│                         │  Linux Subnet (10.0.5.0/24)  │       │
+│                         │  ┌────────┐ ┌────────┐       │       │
+│                         │  │ RHEL1  │ │ RHEL2  │       │       │
+│                         │  └────────┘ └────────┘       │       │
+│                         └──────────────────────────────┘       │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ## 🔧 Configuration Options
@@ -127,6 +135,7 @@ Adjust VM sizes based on your needs and budget:
 | Windows Servers | Standard_D2s_v3 | 2 | 8 GB | Standard workloads |
 | Windows 11 WS | Standard_D2s_v3 | 2 | 8 GB | Client operations |
 | SQL Server | Standard_D4s_v3 | 4 | 16 GB | Database workloads |
+| Linux Servers | Standard_D2s_v3 | 2 | 8 GB | Linux workloads |
 
 ### Auto-Shutdown
 
@@ -183,11 +192,12 @@ See [environments/README.md](environments/README.md) for details.
 | Windows Server VMs | 3 | ~$210 |
 | Windows 11 VM | 1 | ~$70 |
 | SQL Server VM | 1 | ~$140 |
+| Red Hat Linux VMs | 2 | ~$140 |
 | Azure Bastion | 1 | ~$140 |
-| Storage (Premium SSD) | - | ~$50 |
-| **Total** | | **~$610/month** |
+| Storage (Premium SSD) | - | ~$60 |
+| **Total** | | **~$760/month** |
 
-**With auto-shutdown (12hrs/day):** ~$215/month
+**With auto-shutdown (12hrs/day):** ~$270/month
 
 > Note: Costs vary by region and usage. Use [Azure Pricing Calculator](https://azure.microsoft.com/en-us/pricing/calculator/) for precise estimates.
 
@@ -254,6 +264,34 @@ vnet_address_space = ["172.16.0.0/16"]
 
 Use VM extensions in module files to run custom PowerShell scripts on deployment.
 
+### Linux Authentication
+
+The RHEL hosts support two authentication methods:
+
+**SSH Key (Recommended):**
+```hcl
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC..."
+linux_admin_username = "azureuser"
+```
+
+**Password Authentication:**
+```hcl
+ssh_public_key = ""  # Leave empty
+linux_admin_username = "azureuser"
+# Uses admin_password variable
+```
+
+To connect to Linux hosts via Azure Bastion:
+```bash
+# SSH via Bastion
+az network bastion ssh \
+  --name <bastion-name> \
+  --resource-group <rg-name> \
+  --target-resource-id <vm-id> \
+  --auth-type password \
+  --username azureuser
+```
+
 ## 📚 Module Structure
 
 ```
@@ -266,7 +304,8 @@ Use VM extensions in module files to run custom PowerShell scripts on deployment
 │   ├── bastion/              # Azure Bastion
 │   ├── windows-server/       # Windows Server VMs
 │   ├── windows11-workstation/# Windows 11 client
-│   └── sql-server/           # SQL Server deployment
+│   ├── sql-server/           # SQL Server deployment
+│   └── redhat-linux/         # Red Hat Enterprise Linux
 ├── environments/             # Environment configurations
 │   ├── standard/
 │   ├── dev/
@@ -319,20 +358,47 @@ For issues and questions:
 - Review Terraform and Azure documentation
 - Open an issue in this repository
 
+## 🐧 Linux Features
+
+The Red Hat Enterprise Linux hosts come pre-configured with:
+- **RHEL 9.4** - Latest stable version
+- **Cloud-init** - Automated initial configuration
+- **Standard packages** - vim, git, wget, curl, net-tools, bind-utils
+- **SSH access** - Via Azure Bastion (no public IPs)
+- **Auto-shutdown** - Cost savings enabled by default
+- **Premium SSD** - Fast storage for better performance
+
+Use cases for Linux hosts:
+- Hybrid integration testing (Windows + Linux)
+- Web server deployments (Apache, Nginx)
+- Container workloads (Docker, Podman)
+- Database servers (PostgreSQL, MariaDB)
+- Development environments
+- CI/CD agents
+
 ## 🎯 Future Enhancements
 
 Potential additions:
 - [ ] Active Directory automated configuration
 - [ ] Domain join automation for workstations
 - [ ] PowerShell DSC configurations
+- [ ] Ansible playbooks for Linux configuration
 - [ ] Azure DevOps integration
 - [ ] Backup and recovery automation
 - [ ] Monitoring and alerting setup
 - [ ] Azure Policy assignments
+- [ ] Container host configuration (Docker/Podman)
 
 ## 📌 Version History
 
-- **v1.0** - Initial release with standard configuration
+- **v1.1** - Hybrid infrastructure support (Current)
+  - Added 2 Red Hat Enterprise Linux 9.4 VMs
+  - Linux subnet and NSG configuration
+  - SSH authentication support (key and password)
+  - Updated documentation for hybrid scenarios
+  - Enhanced cost estimates
+  
+- **v1.0** - Initial release with Windows-only configuration
   - 3 Windows Server 2025 VMs
   - 1 Windows 11 workstation
   - 1 SQL Server 2022
@@ -341,7 +407,7 @@ Potential additions:
 
 ---
 
-**Built with ❤️ for Windows Server professionals**
+**Built with ❤️ for Windows & Linux professionals**
 
 Made by Adrian Johnson | [GitHub](https://github.com/adrian207/Azure-Win-Lab)
 

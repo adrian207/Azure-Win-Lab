@@ -34,7 +34,8 @@ az account set --subscription "Your-Subscription-Name"
 - ✅ 3x Windows Server 2025 Datacenter (dc1, dc2, dc3)
 - ✅ 1x Windows 11 Enterprise Workstation (ws01)
 - ✅ 1x SQL Server 2022 Developer Edition (sql01)
-- ✅ 1x Azure Bastion (secure RDP access)
+- ✅ 2x Red Hat Enterprise Linux 9.4 (rhel1, rhel2)
+- ✅ 1x Azure Bastion (secure RDP/SSH access)
 - ✅ Complete networking (VNet, subnets, NSGs)
 
 ## 💡 Common Commands

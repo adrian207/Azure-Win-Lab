@@ -30,3 +30,8 @@ output "database_subnet_id" {
   value       = azurerm_subnet.database.id
 }
 
+output "linux_subnet_id" {
+  description = "ID of the Linux subnet"
+  value       = azurerm_subnet.linux.id
+}
+

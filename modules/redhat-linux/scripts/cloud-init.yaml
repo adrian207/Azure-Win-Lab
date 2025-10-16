@@ -1,0 +1,30 @@
+#cloud-config
+# Cloud-init configuration for Red Hat Enterprise Linux
+
+hostname: ${hostname}
+
+# Update packages on first boot
+package_update: true
+package_upgrade: false
+
+# Install common packages
+packages:
+  - vim
+  - git
+  - wget
+  - curl
+  - net-tools
+  - bind-utils
+
+# Run commands on first boot
+runcmd:
+  - echo "RHEL VM initialized at $(date)" >> /var/log/cloud-init-custom.log
+  - systemctl enable chronyd
+  - systemctl start chronyd
+
+# Set timezone
+timezone: America/New_York
+
+# Final message
+final_message: "Red Hat Enterprise Linux VM is ready after $UPTIME seconds"
+
