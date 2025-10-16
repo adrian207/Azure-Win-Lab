@@ -67,20 +67,25 @@ module "bastion" {
   tags                = azurerm_resource_group.lab.tags
 }
 
-# Windows Server 2025 VMs (3 instances)
-module "windows_servers" {
-  source = "./modules/windows-server"
+# Docker Host (replaces Windows Servers + SQL + RHEL)
+module "docker_host" {
+  source = "./modules/docker-host"
 
-  count               = 3
-  resource_group_name = azurerm_resource_group.lab.name
-  location            = azurerm_resource_group.lab.location
-  environment_name    = var.environment_name
-  server_name         = "dc${count.index + 1}"
-  subnet_id           = module.networking.server_subnet_id
-  admin_username      = var.admin_username
-  admin_password      = var.admin_password
-  vm_size             = var.server_vm_size
-  tags                = azurerm_resource_group.lab.tags
+  resource_group_name   = azurerm_resource_group.lab.name
+  location              = azurerm_resource_group.lab.location
+  environment_name      = var.environment_name
+  subnet_id             = module.networking.server_subnet_id
+  static_ip             = "10.0.2.10"
+  admin_username        = var.linux_admin_username
+  ssh_public_key        = var.ssh_public_key
+  admin_password        = var.admin_password
+  vm_size               = var.docker_host_vm_size
+  domain_name           = var.domain_name
+  domain_admin_password = var.admin_password
+  sql_sa_password       = var.sql_admin_password
+  enable_auto_shutdown  = var.enable_auto_shutdown
+  auto_shutdown_time    = var.auto_shutdown_time
+  tags                  = azurerm_resource_group.lab.tags
 }
 
 # Windows 11 Workstation
@@ -98,36 +103,5 @@ module "windows11_workstation" {
   tags                = azurerm_resource_group.lab.tags
 }
 
-# SQL Server VM
-module "sql_server" {
-  source = "./modules/sql-server"
-
-  resource_group_name = azurerm_resource_group.lab.name
-  location            = azurerm_resource_group.lab.location
-  environment_name    = var.environment_name
-  sql_server_name     = "sql01"
-  subnet_id           = module.networking.database_subnet_id
-  admin_username      = var.admin_username
-  admin_password      = var.admin_password
-  sql_admin_username  = var.sql_admin_username
-  sql_admin_password  = var.sql_admin_password
-  vm_size             = var.sql_vm_size
-  tags                = azurerm_resource_group.lab.tags
-}
-
-# Red Hat Enterprise Linux VMs (2 instances)
-module "redhat_linux" {
-  source = "./modules/redhat-linux"
-
-  count               = 2
-  resource_group_name = azurerm_resource_group.lab.name
-  location            = azurerm_resource_group.lab.location
-  environment_name    = var.environment_name
-  linux_name          = "rhel${count.index + 1}"
-  subnet_id           = module.networking.linux_subnet_id
-  admin_username      = var.linux_admin_username
-  admin_password      = var.admin_password
-  ssh_public_key      = var.ssh_public_key
-  vm_size             = var.linux_vm_size
-  tags                = azurerm_resource_group.lab.tags
-}
+# NOTE: SQL Server, RHEL workloads now run as Docker containers on docker_host
+# See docker-compose.yml in modules/docker-host/scripts/
