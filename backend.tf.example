@@ -1,0 +1,14 @@
+# Remote State Backend Configuration
+# 
+# After running bootstrap/state-storage.tf, uncomment and configure this file
+# Then run: terraform init -migrate-state
+
+# terraform {
+#   backend "azurerm" {
+#     resource_group_name  = "terraform-state-rg"
+#     storage_account_name = "tfstate########"  # From bootstrap output
+#     container_name       = "tfstate"
+#     key                  = "lab.terraform.tfstate"
+#   }
+# }
+

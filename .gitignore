@@ -11,6 +11,7 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+tfplan
 
 # Sensitive data
 *.pem
@@ -38,4 +39,11 @@ Thumbs.db
 
 # Scripts temp files
 *.tmp
+
+# Environment variables
+.env
+.env.local
+
+# Pre-commit
+.secrets.baseline.new
 
