@@ -96,6 +96,18 @@ variable "linux_vm_size" {
   default     = "Standard_D2s_v3"
 }
 
+variable "docker_host_vm_size" {
+  description = "VM size for Docker host (runs all containers)"
+  type        = string
+  default     = "Standard_D4s_v3"
+}
+
+variable "domain_name" {
+  description = "Active Directory domain name for Samba"
+  type        = string
+  default     = "lab.local"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

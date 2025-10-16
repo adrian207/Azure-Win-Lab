@@ -1,4 +1,4 @@
-# Outputs for Azure Windows Server Lab
+# Outputs for Azure Hybrid Lab - Docker Edition
 
 output "resource_group_name" {
   description = "Name of the resource group"
@@ -20,16 +20,28 @@ output "bastion_host_name" {
   value       = module.bastion.bastion_name
 }
 
-output "windows_server_names" {
-  description = "Names of the Windows Server 2025 VMs"
-  value       = [for server in module.windows_servers : server.vm_name]
+# Docker Host Outputs
+output "docker_host_name" {
+  description = "Name of the Docker host VM"
+  value       = module.docker_host.vm_name
 }
 
-output "windows_server_private_ips" {
-  description = "Private IP addresses of Windows Servers"
-  value       = [for server in module.windows_servers : server.private_ip_address]
+output "docker_host_ip" {
+  description = "IP address of Docker host"
+  value       = module.docker_host.private_ip_address
 }
 
+output "docker_services" {
+  description = "Services running on Docker host"
+  value       = module.docker_host.services
+}
+
+output "portainer_url" {
+  description = "Portainer web UI URL"
+  value       = module.docker_host.portainer_url
+}
+
+# Windows 11 Workstation Outputs
 output "windows11_workstation_name" {
   description = "Name of the Windows 11 workstation"
   value       = module.windows11_workstation.vm_name
@@ -40,76 +52,82 @@ output "windows11_workstation_private_ip" {
   value       = module.windows11_workstation.private_ip_address
 }
 
-output "sql_server_name" {
-  description = "Name of the SQL Server VM"
-  value       = module.sql_server.vm_name
-}
-
-output "sql_server_private_ip" {
-  description = "Private IP address of SQL Server"
-  value       = module.sql_server.private_ip_address
-}
-
-output "linux_server_names" {
-  description = "Names of the Red Hat Linux VMs"
-  value       = [for server in module.redhat_linux : server.vm_name]
-}
-
-output "linux_server_private_ips" {
-  description = "Private IP addresses of Linux Servers"
-  value       = [for server in module.redhat_linux : server.private_ip_address]
-}
-
-output "linux_admin_username" {
-  description = "Admin username for Linux hosts"
-  value       = var.linux_admin_username
-}
-
 output "connection_instructions" {
   description = "Instructions for connecting to the lab environment"
   value = <<-EOT
-    ================================
-    Azure Hybrid Server Lab - Connection Info
-    ================================
+    ╔═══════════════════════════════════════════════════════════════════╗
+    ║     Azure Hybrid Lab - DOCKER EDITION - Connection Info          ║
+    ╚═══════════════════════════════════════════════════════════════════╝
     
     Resource Group: ${azurerm_resource_group.lab.name}
     Location: ${azurerm_resource_group.lab.location}
     
-    WINDOWS SYSTEMS (RDP via Bastion):
-    -----------------------------------
+    🐳 DOCKER HOST (All services run here):
+    ─────────────────────────────────────────
+    Host: ${module.docker_host.vm_name}
+    IP: ${module.docker_host.private_ip_address}
+    
+    SSH Access:
+      ${module.docker_host.ssh_command}
+      (Via Azure Bastion or direct SSH)
+    
+    📊 Management UIs:
+    ─────────────────────────────────────────
+    Portainer (Docker GUI):  ${module.docker_host.portainer_url}
+    GitLab:                  http://${module.docker_host.private_ip_address}:8080
+    Jenkins:                 http://${module.docker_host.private_ip_address}:8081
+    Adminer (DB GUI):        http://${module.docker_host.private_ip_address}:8082
+    
+    🗄️ Database Services:
+    ─────────────────────────────────────────
+    SQL Server:    ${module.docker_host.services.sql_server}
+                   User: sa / Password: [from terraform.tfvars]
+    
+    PostgreSQL:    ${module.docker_host.services.postgresql}
+                   User: postgres / Password: [from .env]
+    
+    MongoDB:       IP:27017
+                   User: admin / Password: [from .env]
+    
+    Redis:         IP:6379
+    
+    🌐 Web & Network Services:
+    ─────────────────────────────────────────
+    Nginx:         ${module.docker_host.services.nginx}
+    Samba AD DC:   ${module.docker_host.services.samba_ad}
+                   Domain: ${var.domain_name}
+    
+    💻 WINDOWS 11 WORKSTATION (RDP via Bastion):
+    ─────────────────────────────────────────
+    Name: ${module.windows11_workstation.vm_name}
+    IP: ${module.windows11_workstation.private_ip_address}
+    
     1. Go to Azure Portal
-    2. Navigate to the VM you want to access
+    2. Navigate to Windows 11 VM
     3. Click "Connect" > "Bastion"
-    4. Enter credentials:
-       - Username: ${var.admin_username}
-       - Password: [Your configured password]
+    4. Enter credentials: ${var.admin_username} / [password]
     
-    Windows Servers:
-    ${join("\n", [for idx, server in module.windows_servers : "  - ${server.vm_name}: ${server.private_ip_address}"])}
+    📋 Docker Commands (on Docker Host):
+    ─────────────────────────────────────────
+    lab status          - Show all containers
+    lab logs [service]  - View service logs
+    lab shell [name]    - Open shell in container
+    lab restart         - Restart all services
     
-    Windows 11 Workstation:
-      - ${module.windows11_workstation.vm_name}: ${module.windows11_workstation.private_ip_address}
+    Or use Docker Compose directly:
+      cd /opt/lab
+      docker-compose ps
+      docker-compose logs -f
     
-    SQL Server:
-      - ${module.sql_server.vm_name}: ${module.sql_server.private_ip_address}
-      - SQL Admin: ${var.sql_admin_username}
+    💰 COST SAVINGS:
+    ─────────────────────────────────────────
+    Previous architecture: ~$270/month
+    Hybrid architecture:   ~$70/month
+    Savings: 74% ($200/month)
     
-    LINUX SYSTEMS (SSH via Bastion):
-    -----------------------------------
-    Red Hat Enterprise Linux Servers:
-    ${join("\n", [for idx, server in module.redhat_linux : "  - ${server.vm_name}: ${server.private_ip_address}"])}
-    
-    Linux Admin Username: ${var.linux_admin_username}
-    ${var.ssh_public_key != "" ? "Authentication: SSH Key" : "Authentication: Password"}
-    
-    To SSH via Bastion (from local machine):
-      az network bastion ssh --name ${module.bastion.bastion_name} \
-        --resource-group ${azurerm_resource_group.lab.name} \
-        --target-resource-id <VM_RESOURCE_ID> \
-        --auth-type ${var.ssh_public_key != "" ? "ssh-key" : "password"} \
-        --username ${var.linux_admin_username}
-    
-    ================================
+    ╔═══════════════════════════════════════════════════════════════════╗
+    ║  All Windows Server, SQL, and Linux workloads now run in Docker  ║
+    ║  Access via Portainer UI or SSH to Docker host                   ║
+    ╚═══════════════════════════════════════════════════════════════════╝
   EOT
 }
-

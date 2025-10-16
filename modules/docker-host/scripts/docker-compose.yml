@@ -1,0 +1,298 @@
+# Azure Hybrid Lab - Docker Compose Configuration
+# Complete lab environment with Windows AD replacement
+
+version: '3.8'
+
+services:
+  # ================================================
+  # Active Directory (Samba AD DC)
+  # ================================================
+  samba-ad:
+    image: nowsci/samba-domain
+    container_name: samba-ad-dc
+    hostname: dc1
+    environment:
+      DOMAIN: ${DOMAIN_NAME:-LAB}
+      DOMAINPASS: ${DOMAIN_PASS}
+      DNSFORWARDER: 8.8.8.8
+      HOSTIP: 10.0.2.10
+      INSECURELDAP: "true"
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "88:88/tcp"
+      - "88:88/udp"
+      - "135:135"
+      - "137:137/udp"
+      - "138:138/udp"
+      - "139:139"
+      - "389:389/tcp"
+      - "389:389/udp"
+      - "445:445"
+      - "464:464/tcp"
+      - "464:464/udp"
+      - "636:636"
+      - "3268:3268"
+      - "3269:3269"
+    volumes:
+      - samba-data:/var/lib/samba
+      - samba-config:/etc/samba/external
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.10
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "smbclient", "-L", "localhost", "-U%"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ================================================
+  # SQL Server 2022 (Linux)
+  # ================================================
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
+    hostname: sql01
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: ${SQL_SA_PASSWORD}
+      MSSQL_PID: "Developer"
+      MSSQL_TCP_PORT: 1433
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql/data
+      - mssql-log:/var/opt/mssql/log
+      - mssql-backup:/var/opt/mssql/backup
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.20
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-U", "sa", "-P", "${SQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ================================================
+  # PostgreSQL (Open-source alternative)
+  # ================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: labdb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.21
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ================================================
+  # MongoDB (NoSQL database)
+  # ================================================
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    hostname: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.30
+    restart: unless-stopped
+
+  # ================================================
+  # Redis (Caching/Messaging)
+  # ================================================
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.40
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ================================================
+  # Nginx Web Server
+  # ================================================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    hostname: web01
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-html:/usr/share/nginx/html
+      - nginx-config:/etc/nginx/conf.d
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.50
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ================================================
+  # Portainer (Docker GUI Management)
+  # ================================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    hostname: portainer
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.60
+    restart: unless-stopped
+
+  # ================================================
+  # GitLab CE (DevOps Platform)
+  # ================================================
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: gitlab.lab.local
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.lab.local:8080'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+    ports:
+      - "8080:8080"
+      - "8443:443"
+      - "2222:22"
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.70
+    restart: unless-stopped
+    shm_size: '256m'
+
+  # ================================================
+  # Jenkins (CI/CD)
+  # ================================================
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    hostname: jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.80
+    user: root
+    restart: unless-stopped
+
+  # ================================================
+  # Adminer (Database Management UI)
+  # ================================================
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    hostname: adminer
+    ports:
+      - "8082:8080"
+    networks:
+      lab-network:
+        ipv4_address: 10.0.100.90
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+# ================================================
+# Volumes (Persistent Data)
+# ================================================
+volumes:
+  samba-data:
+    driver: local
+  samba-config:
+    driver: local
+  mssql-data:
+    driver: local
+  mssql-log:
+    driver: local
+  mssql-backup:
+    driver: local
+  postgres-data:
+    driver: local
+  mongo-data:
+    driver: local
+  mongo-config:
+    driver: local
+  redis-data:
+    driver: local
+  nginx-html:
+    driver: local
+  nginx-config:
+    driver: local
+  portainer-data:
+    driver: local
+  gitlab-config:
+    driver: local
+  gitlab-logs:
+    driver: local
+  gitlab-data:
+    driver: local
+  jenkins-home:
+    driver: local
+
+# ================================================
+# Networks
+# ================================================
+networks:
+  lab-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.100.0/24
+          gateway: 10.0.100.1
+

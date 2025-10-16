@@ -1,0 +1,166 @@
+#cloud-config
+# Cloud-init configuration for Docker Host
+# Installs Docker, Docker Compose, and deploys lab environment
+
+hostname: ${hostname}
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose
+  - git
+  - vim
+  - htop
+  - curl
+  - net-tools
+  - jq
+
+groups:
+  - docker
+
+users:
+  - default
+  - name: ${admin_username}
+    groups: docker, sudo
+    shell: /bin/bash
+
+write_files:
+  # Docker Compose file for lab environment
+  - path: /opt/lab/docker-compose.yml
+    content: |
+${indent(6, docker_compose_file)}
+    permissions: '0644'
+
+  # Environment file for Docker Compose
+  - path: /opt/lab/.env
+    content: |
+      DOMAIN_NAME=${domain_name}
+      DOMAIN_PASS=${domain_password}
+      SQL_SA_PASSWORD=${sql_sa_password}
+      POSTGRES_PASSWORD=PostgresPass123!
+      MONGO_ROOT_PASSWORD=MongoPass123!
+    permissions: '0600'
+
+  # MOTD with service information
+  - path: /etc/motd
+    content: |
+      ╔═══════════════════════════════════════════════════════════╗
+      ║         Azure Hybrid Lab - Docker Host                    ║
+      ║                                                           ║
+      ║   🐳 Docker Services Running:                            ║
+      ║   ────────────────────────────────────────────────────   ║
+      ║   Portainer:       http://IP:9000                        ║
+      ║   Samba AD DC:     dc1.${domain_name}                    ║
+      ║   SQL Server:      IP:1433 (sa/${sql_sa_password})       ║
+      ║   PostgreSQL:      IP:5432                               ║
+      ║   Nginx:           http://IP                             ║
+      ║   GitLab:          http://IP:8080                        ║
+      ║   MongoDB:         IP:27017                              ║
+      ║   Redis:           IP:6379                               ║
+      ║                                                           ║
+      ║   📁 Lab Directory: /opt/lab                             ║
+      ║   📊 Commands:                                            ║
+      ║      cd /opt/lab                                         ║
+      ║      docker-compose ps                                   ║
+      ║      docker-compose logs -f [service]                    ║
+      ║      docker ps                                           ║
+      ║                                                           ║
+      ║   🔗 Connect via Azure Bastion or SSH                    ║
+      ╚═══════════════════════════════════════════════════════════╝
+
+  # Helper script for managing containers
+  - path: /usr/local/bin/lab
+    content: |
+      #!/bin/bash
+      # Lab management script
+      
+      case "$1" in
+        start)
+          cd /opt/lab && docker-compose up -d
+          echo "✓ Lab services started"
+          ;;
+        stop)
+          cd /opt/lab && docker-compose down
+          echo "✓ Lab services stopped"
+          ;;
+        restart)
+          cd /opt/lab && docker-compose restart
+          echo "✓ Lab services restarted"
+          ;;
+        status)
+          cd /opt/lab && docker-compose ps
+          ;;
+        logs)
+          cd /opt/lab && docker-compose logs -f "$2"
+          ;;
+        shell)
+          docker exec -it "$2" /bin/bash || docker exec -it "$2" /bin/sh
+          ;;
+        *)
+          echo "Lab Management Commands:"
+          echo "  lab start    - Start all services"
+          echo "  lab stop     - Stop all services"
+          echo "  lab restart  - Restart all services"
+          echo "  lab status   - Show service status"
+          echo "  lab logs [service] - Show logs for service"
+          echo "  lab shell [container] - Open shell in container"
+          ;;
+      esac
+    permissions: '0755'
+
+runcmd:
+  # Add user to docker group
+  - usermod -aG docker ${admin_username}
+  
+  # Enable and start Docker
+  - systemctl enable docker
+  - systemctl start docker
+  
+  # Create lab directory
+  - mkdir -p /opt/lab
+  - chown ${admin_username}:${admin_username} /opt/lab
+  
+  # Mount data disk to /var/lib/docker
+  - |
+    while [ ! -b /dev/sdc ]; do sleep 1; done
+    mkfs.ext4 -F /dev/sdc
+    mkdir -p /mnt/docker-data
+    mount /dev/sdc /mnt/docker-data
+    echo "/dev/sdc /mnt/docker-data ext4 defaults 0 0" >> /etc/fstab
+    
+    # Move Docker data to mounted disk
+    systemctl stop docker
+    rsync -a /var/lib/docker/ /mnt/docker-data/
+    rm -rf /var/lib/docker
+    ln -s /mnt/docker-data /var/lib/docker
+    systemctl start docker
+  
+  # Install Docker Compose (latest version)
+  - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
+  
+  # Pull common images to speed up first start
+  - docker pull ubuntu:22.04
+  - docker pull nginx:alpine
+  - docker pull postgres:16
+  - docker pull redis:7-alpine
+  - docker pull mongo:7
+  - docker pull mcr.microsoft.com/mssql/server:2022-latest
+  - docker pull portainer/portainer-ce:latest
+  
+  # Start lab environment
+  - cd /opt/lab && docker-compose up -d
+  
+  # Wait for services to be ready
+  - sleep 30
+  
+  # Log deployment
+  - echo "Docker lab environment deployed at $(date)" >> /var/log/cloud-init-docker.log
+  - docker ps >> /var/log/cloud-init-docker.log
+
+timezone: America/New_York
+
+final_message: "Docker Host ready! Lab services starting. Access Portainer at http://IP:9000 after $UPTIME seconds"
+
