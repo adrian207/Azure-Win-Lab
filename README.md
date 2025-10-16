@@ -15,6 +15,9 @@
 
 ## Executive Summary
 
+> **💡 NEW - Cost-Optimized Alternative Available**  
+> Looking to save 74% on costs? Check out our [`hybrid-docker`](../../tree/hybrid-docker) branch that uses Docker containers instead of VMs ($70/month vs $270/month). See [BRANCH_GUIDE.md](BRANCH_GUIDE.md) for detailed comparison.
+
 This Infrastructure as Code (IaC) solution delivers a production-ready, hybrid cloud environment on Microsoft Azure, combining Windows Server, Linux, and database workloads in a secure, segmented, and highly automated architecture. Built with Terraform, it enables rapid deployment of complex multi-OS infrastructures for testing, development, demonstrations, and proof-of-concept scenarios.
 
 **Key Value Propositions:**
