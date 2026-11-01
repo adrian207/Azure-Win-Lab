@@ -78,6 +78,14 @@ scripts/deploy.sh, destroy.sh
 - Samba provides AD authentication, DNS and Kerberos, not every Windows Server feature (no Group Policy management console on the server side, no AD CS).
 - The `windows-server`, `sql-server`, `redhat-linux`, `keyvault` and `monitoring` modules validate but are not wired into `main.tf`. The cost documents compare that all-VM design with the Docker design used here. [BRANCH_GUIDE.md](BRANCH_GUIDE.md) describes the two as separate branches; the Docker design has since been merged into `master`.
 
+## Related repositories
+
+These Azure labs overlap; pick by what you want to practise:
+
+- **[Azure-Free-Tier-Datacenter](https://github.com/adrian207/Azure-Free-Tier-Datacenter)**: a segmented multi-VM "datacenter" built with Azure CLI and Ansible on free-tier-sized VMs, reached through Guacamole
+- **Azure-Win-Lab** (this repository): Terraform for a Samba AD domain controller and server apps in Docker plus a Windows 11 workstation, reached through Azure Bastion
+- **[azure-sql-docker-demos](https://github.com/adrian207/azure-sql-docker-demos)**: Terraform for SQL Server 2022 containers for log shipping, replication and availability groups, with Prometheus and Grafana
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
