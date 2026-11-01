@@ -30,7 +30,7 @@ write_files:
   # Docker Compose file for lab environment
   - path: /opt/lab/docker-compose.yml
     content: |
-${indent(6, docker_compose_file)}
+      ${indent(6, docker_compose_file)}
     permissions: '0644'
 
   # Environment file for Docker Compose
